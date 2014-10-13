@@ -35,7 +35,7 @@ app.delete('/:dbName', function (req, res) {
   if (!users[req.params.dbName]) {
     res.status(404).end('wrong db');
   } else {
-    users[req.params.dbName].length = 0;
+    delete users[req.params.dbName];
     res.status(200).end('db cleaned');
   }
 });
