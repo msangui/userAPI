@@ -21,22 +21,31 @@ app.use(bodyParser.json({ type: 'application/json' }));
 
 app.get('/', function (req, res) {
   res.send('Basic User API: \n ' +
-    'To create a new user DB: GET /:dbName/create \n ' +
-    'To create a new user:    POST /:dbName/users | {"name": "name": "age": age} \n ' +
-    'To update a user:        PUT /:dbName/users/:userId | {"name": "name"} || {"age": age} || {"name": "name": "age": age} \n ' +
-    'To delete a user:        DELETE /:dbName/users/:userId \n ' +
+    'To create a new user DB: POST /:dbName \n ' +
+    'To clean DB:             DELETE /:dbName \n' +
     'To get all users:        GET /:dbName/users \n ' +
     'To get a specific user:  GET /:dbName/users/:userId \n ' +
-    'To clean DB:             GET /:dbName/clean \n\n' +
+    'To create a new user:    POST /:dbName/users | {"name": "name": "age": age} \n ' +
+    'To update a user:        PUT /:dbName/users/:userId | {"name": "name"} || {"age": age} || {"name": "name": "age": age} \n ' +
+    'To delete a user:        DELETE /:dbName/users/:userId \n\n ' +
     'This is crappy JS object based DB');
 });
 
-app.get('/megaClean', function (req, res) {
+app.delete('/:dbName', function (req, res) {
+  if (!users[req.params.dbName]) {
+    res.status(404).end('wrong db');
+  } else {
+    users[req.params.dbName].length = 0;
+    res.status(200).end('db cleaned');
+  }
+});
+
+app.delete('/', function (req, res) {
   users = {};
   res.status(200).end();
 });
 
-app.get('/:dbName/create', function (req, res) {
+app.post('/:dbName', function (req, res) {
   var dbName = req.params.dbName;
   if (dbName.match(/^[a-z0-9]+$/i)) {
     if (dbName.length > 3 && dbName.length < 20) {
@@ -59,15 +68,6 @@ app.get('/:dbName/users', function (req, res) {
     res.status(404).end('wrong db, create one by GET /:dbName/create');
   } else {
     res.send({users: users[req.params.dbName]});
-  }
-});
-
-app.get('/:dbName/clean', function (req, res) {
-  if (!users[req.params.dbName]) {
-    res.status(404).end('wrong db');
-  } else {
-    users[req.params.dbName].length = 0;
-    res.status(200).end('db cleaned');
   }
 });
 
