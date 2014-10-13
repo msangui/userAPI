@@ -22,7 +22,7 @@ app.use(bodyParser.json({ type: 'application/json' }));
 app.get('/', function (req, res) {
   res.send('Basic User API: \n ' +
     'To create a new user DB: POST /:dbName \n ' +
-    'To clean DB:             DELETE /:dbName \n' +
+    'To clean DB:             DELETE /:dbName \n ' +
     'To get all users:        GET /:dbName/users \n ' +
     'To get a specific user:  GET /:dbName/users/:userId \n ' +
     'To create a new user:    POST /:dbName/users | {"name": "name": "age": age} \n ' +
