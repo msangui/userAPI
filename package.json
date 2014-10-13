@@ -1,8 +1,26 @@
 {
-  "name": "userAPI",
-  "description": "a user api",
+  "name": "user-api",
   "version": "0.0.1",
+  "description": "A sample Node.js app using Express 4",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
   "dependencies": {
-    "express": "3.x"
-  }
+    "express": "^4.0.0"
+  },
+  "engines": {
+    "node": "0.10.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/msangui/userAPI"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express"
+  ],
+  "author": "Matias Sanguinetti",
+  "license": "MIT"
 }
