@@ -65,7 +65,7 @@ app.post('/:dbName', function (req, res) {
 
 app.get('/:dbName/users', function (req, res) {
   if (!users[req.params.dbName]) {
-    res.status(404).end('wrong db, create one by GET /:dbName/create');
+    res.status(404).end('wrong db, create one by POST /:dbName');
   } else {
     res.send({users: users[req.params.dbName]});
   }
@@ -74,7 +74,7 @@ app.get('/:dbName/users', function (req, res) {
 app.get('/:dbName/users/:userId', function (req, res) {
   var db = users[req.params.dbName], user, index;
   if (!db) {
-    res.status(400).end('wrong database, create one by GET /:dbName/create');
+    res.status(400).end('wrong database, create one by POST /:dbName');
   } else {
     for (index = 0; index < db.length; index += 1) {
       if (db[index].id === req.params.userId) {
@@ -93,7 +93,7 @@ app.get('/:dbName/users/:userId', function (req, res) {
 app.delete('/:dbName/users/:userId', function (req, res) {
   var db = users[req.params.dbName], user, index;
   if (!db) {
-    res.status(400).end('wrong database, create one by GET /:dbName/create');
+    res.status(400).end('wrong database, create one by POST /:dbName');
   } else {
     for (index = 0; index < db.length; index += 1) {
       if (db[index].id == req.params.userId) {
@@ -112,7 +112,7 @@ app.delete('/:dbName/users/:userId', function (req, res) {
 app.put('/:dbName/users/:userId', function (req, res) {
   var db = users[req.params.dbName], user, index, name = req.param('name'), age = req.param('age');
     if (!db) {
-    res.status(400).end('wrong database, create one by GET /:dbName/create');
+    res.status(400).end('wrong database, create one by POST /:dbName');
   } else {
     if (name || age) {
       for (index = 0; index < db.length; index += 1) {
@@ -148,7 +148,7 @@ app.post('/:dbName/users', function (req, res) {
       res.status(400).send({reason: 'missing params: should be like {"name": "john", "age": 53}'})
     }
   } else {
-    res.status(400).end('wrong database, create one by GET /:dbName/create');
+    res.status(400).end('wrong database, create one by POST /:dbName');
   }
 });
 
