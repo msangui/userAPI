@@ -1,6 +1,5 @@
 var express = require('express'),
   app = new express(),
-  users = {},
   bodyParser = require('body-parser'),
   fs = require('fs');
 
@@ -9,6 +8,7 @@ function getDB(name) {
   try {
     db = fs.readFileSync('data/'+ name + '.json', 'utf8');
   } catch (e) {
+    console.error(e);
     db = false;
   }
   return db;
@@ -21,6 +21,7 @@ function createDB(name) {
     fs.writeFileSync('data/'+ name + '.json', '{"users": []}');
     success = true;
   } catch (e) {
+    console.error(e);
     success = false;
   }
   return success;
@@ -29,9 +30,10 @@ function createDB(name) {
 function deleteDB(name) {
   var success;
   try {
-    fs.unlinkSync('data/'+ name + '.json')
+    fs.unlinkSync('data/'+ name + '.json');
     success = true;
   } catch (e) {
+    console.error(e);
     success = false;
   }
   return success;
@@ -43,6 +45,7 @@ function saveDB(name, db) {
     fs.writeFileSync('data/' + name + '.json', JSON.stringify(db));
     success = true;
   } catch (e) {
+    console.error(e);
     success = false;
   }
   return success;
