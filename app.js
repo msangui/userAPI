@@ -133,7 +133,7 @@ app.get('/:dbName/users', function (req, res) {
   if (!db) {
     res.status(404).end('wrong db, create one by POST /:dbName');
   } else {
-    res.send({users: JSON.parse(db)});
+    res.send(JSON.parse(db));
   }
 });
 
