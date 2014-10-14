@@ -1,7 +1,52 @@
 var express = require('express'),
   app = new express(),
   users = {},
-  bodyParser = require('body-parser');
+  bodyParser = require('body-parser'),
+  fs = require('fs');
+
+function getDB(name) {
+  var db;
+  try {
+    db = fs.readFileSync('data/'+ name + '.json', 'utf8');
+  } catch (e) {
+    db = false;
+  }
+  return db;
+}
+
+function createDB(name) {
+  var success;
+  try {
+    fs.openSync('data/'+ name + '.json', 'wx+');
+    fs.writeFileSync('data/'+ name + '.json', '{"users": []}');
+    success = true;
+  } catch (e) {
+    success = false;
+  }
+  return success;
+}
+
+function deleteDB(name) {
+  var success;
+  try {
+    fs.unlinkSync('data/'+ name + '.json')
+    success = true;
+  } catch (e) {
+    success = false;
+  }
+  return success;
+}
+
+function saveDB(name, db) {
+  var success;
+  try {
+    fs.writeFileSync('data/' + name + '.json', JSON.stringify(db));
+    success = true;
+  } catch (e) {
+    success = false;
+  }
+  return success;
+}
 
 app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -20,6 +65,12 @@ app.use(function(req, res, next) {
 app.use(bodyParser.json({ type: 'application/json' }));
 
 app.get('/', function (req, res) {
+  var dbs;
+  try {
+    dbs =fs.readdirSync('data/');
+  } catch (e) {
+    dbs = [];
+  }
   res.send('Basic User API: \n ' +
     'To create a new user DB: POST    /:dbName \n ' +
     'To remove a user DB:     DELETE  /:dbName \n ' +
@@ -28,29 +79,40 @@ app.get('/', function (req, res) {
     'To create a new user:    POST    /:dbName/users | {"name": "name": "age": age} \n ' +
     'To update a user:        PUT     /:dbName/users/:userId | {"name": "name"} || {"age": age} || {"name": "name": "age": age} \n ' +
     'To delete a user:        DELETE  /:dbName/users/:userId \n\n ' +
-    'This is crappy JS object based DB');
+    'This is crappy JS object based DB \n\n\n' +
+    'Current DBs : \n' +
+    dbs.map(function (db) {
+      return db.substring(0, db.indexOf('.'))
+    }).join('\n'));
 });
-
-app.delete('/:dbName', function (req, res) {
-  if (!users[req.params.dbName]) {
-    res.status(404).end('wrong db');
-  } else {
-    delete users[req.params.dbName];
-    res.status(200).end('db cleaned');
+// Chaos Actions
+app.delete('/', function (req, res) {
+  var files, i;
+  try {
+    files =fs.readdirSync('data/');
+    for (i = 0; i < files.length; i += 1) {
+      deleteDB(files[i].substring(0, files[i].indexOf('.')));
+    }
+    res.status(200).end();
+  } catch (e) {
+    res.status(500).end('something went terribly wrong');
   }
 });
 
-app.delete('/', function (req, res) {
-  users = {};
-  res.status(200).end();
+// DB Actions
+app.delete('/:dbName', function (req, res) {
+  if (deleteDB(req.params.dbName)) {
+    res.status(200).end('db deleted');
+  } else {
+    res.status(404).end('wrong db');
+  }
 });
 
 app.post('/:dbName', function (req, res) {
   var dbName = req.params.dbName;
   if (dbName.match(/^[a-z0-9]+$/i)) {
     if (dbName.length > 3 && dbName.length < 20) {
-      if (!users[dbName]) {
-        users[dbName] = [];
+      if (createDB(dbName)) {
         res.status(200).end('db created');
       } else {
         res.status(400).end('db name already taken');
@@ -64,21 +126,23 @@ app.post('/:dbName', function (req, res) {
 });
 
 app.get('/:dbName/users', function (req, res) {
-  if (!users[req.params.dbName]) {
+  var db = getDB(req.params.dbName);
+  if (!db) {
     res.status(404).end('wrong db, create one by POST /:dbName');
   } else {
-    res.send({users: users[req.params.dbName]});
+    res.send({users: JSON.parse(db)});
   }
 });
 
 app.get('/:dbName/users/:userId', function (req, res) {
-  var db = users[req.params.dbName], user, index;
+  var db = getDB(req.params.dbName), users, user, index;
   if (!db) {
     res.status(400).end('wrong database, create one by POST /:dbName');
   } else {
-    for (index = 0; index < db.length; index += 1) {
-      if (db[index].id === req.params.userId) {
-        user = req.params.userId;
+    db = JSON.parse(db);
+    for (index = 0; index < db.users.length; index += 1) {
+      if (db.users[index].id == req.params.userId) {
+        user = db.users[index];
         break;
       }
     }
@@ -91,33 +155,39 @@ app.get('/:dbName/users/:userId', function (req, res) {
 });
 
 app.delete('/:dbName/users/:userId', function (req, res) {
-  var db = users[req.params.dbName], user, index;
+  var db = getDB(req.params.dbName), user, index;
   if (!db) {
     res.status(400).end('wrong database, create one by POST /:dbName');
   } else {
-    for (index = 0; index < db.length; index += 1) {
-      if (db[index].id == req.params.userId) {
-        user = req.params.userId;
+    db = JSON.parse(db);
+    for (index = 0; index < db.users.length; index += 1) {
+      if (db.users[index].id == req.params.userId) {
+        user = db.users[index];
         break;
       }
     }
     if (user) {
-      db.splice(index, 1);
-      res.status(200).end('user deleted');
+      db.users.splice(index, 1);
+      if (saveDB(req.params.dbName, db)) {
+        res.status(200).end('user deleted');
+      } else {
+        res.status(500).end('something went wrong');
+      }
     } else {
       res.status(404).end('user not found');
     }
   }
 });
 app.put('/:dbName/users/:userId', function (req, res) {
-  var db = users[req.params.dbName], user, index, name = req.param('name'), age = req.param('age');
+  var db = getDB(req.params.dbName), user, index, name = req.param('name'), age = req.param('age');
     if (!db) {
     res.status(400).end('wrong database, create one by POST /:dbName');
   } else {
     if (name || age) {
-      for (index = 0; index < db.length; index += 1) {
-        if (db[index].id == req.params.userId) {
-          user = db[index];
+      db = JSON.parse(db);
+      for (index = 0; index < db.users.length; index += 1) {
+        if (db.users[index].id == req.params.userId) {
+          user = db.users[index];
           break;
         }
       }
@@ -128,7 +198,11 @@ app.put('/:dbName/users/:userId', function (req, res) {
         if (age) {
           user.age = age;
         }
-        res.status(200).end('user edited');
+        if (saveDB(req.params.dbName, db)) {
+          res.status(200).end('user edited');
+        } else {
+          res.status(500).end('something went wrong');
+        }
       } else {
         res.status(404).end('user not found');
       }
@@ -139,13 +213,19 @@ app.put('/:dbName/users/:userId', function (req, res) {
 });
 
 app.post('/:dbName/users', function (req, res) {
-  var name = req.param('name'), age = req.param('age'), db = users[req.params.dbName];
+  var name = req.param('name'), age = req.param('age'), db = getDB(req.params.dbName);
   if (db) {
     if (name && age) {
-      db.push({id: Date.now(), name: name, age: age});
-      res.send(db[db.length - 1]);
+      db = JSON.parse(db);
+      db.users.push({id: Date.now(), name: name, age: age});
+      if (saveDB(req.params.dbName, db)) {
+        res.send(db.users[db.users.length - 1]);
+      } else {
+        res.status(500).end('failed saving user');
+      }
+
     } else {
-      res.status(400).send({reason: 'missing params: should be like {"name": "john", "age": 53}'})
+      res.status(400).end({reason: 'missing params: should be like {"name": "john", "age": 53}'})
     }
   } else {
     res.status(400).end('wrong database, create one by POST /:dbName');
